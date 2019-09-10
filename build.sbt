@@ -5,7 +5,9 @@ scalaVersion := "2.13.0"
 lazy val akkaHttpVersion = "10.1.9"
 lazy val akkaVersion     = "2.5.25"
 
-enablePlugins(CodegenPlugin)
+enablePlugins(JavaAppPackaging)
+
+mainClass in Compile := Some("com.lpenzey.OmnibusServer")
 
 lazy val root = (project in file(".")).
   settings(
