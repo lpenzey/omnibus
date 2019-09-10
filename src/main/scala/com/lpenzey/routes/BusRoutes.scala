@@ -23,18 +23,14 @@ trait BusRoutes extends JsonSupport {
 
   private val cors = new CORSHandler {}
 
-  def busRoutes: Route = pathPrefix("bus") {
+  def busRoutes: Route = pathPrefix("api") {
 
     pathPrefix("routes") {
       pathEnd {
         concat(
           get {
             val stopsFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = "http://www.ctabustracker.com/bustime/api/v2/getroutes?key=bvgb6SZYZJydq8SNfpk2gNZba&format=json"))
-//            stopsFuture
-//                .onComplete {
-//                  case Success(res) => complete(res)
-//                  case Failure(_)   => sys.error("something wrong")
-//                }
+//
             complete(stopsFuture)
           })
       }
