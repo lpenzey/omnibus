@@ -20,9 +20,7 @@ lazy val root = (project in file(".")).
       "com.typesafe.slick" %% "slick"               % "3.3.2",
       "com.typesafe.slick" %% "slick-codegen"       % "3.3.2",
       "org.slf4j" % "slf4j-nop" % "1.7.10",
-      
 
-      "net.codingwell" %% "scala-guice"             % "4.2.6",
       "com.h2database" % "h2"                       % "1.4.187",
       "com.typesafe.slick" %% "slick-hikaricp"      % "3.3.2",
       "mysql" % "mysql-connector-java"              % "8.0.17",
