@@ -6,7 +6,7 @@ trait DatabaseConfig extends Config {
 
   import driver.api._
 
-  def db: driver.backend.DatabaseDef = Database.forConfig("mysql")
+  def db: driver.backend.DatabaseDef = Database.forConfig("database")
 
   implicit val session: Session = db.createSession()
 }
