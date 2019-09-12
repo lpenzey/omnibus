@@ -27,7 +27,7 @@ trait UserRoutes extends JsonSupport {
 
   def registerUserActor: ActorRef
 
-  implicit lazy val timeout: Timeout = Timeout(5.seconds)
+  implicit lazy val timeout: Timeout = Timeout(10.seconds)
   val allow = RawHeader("Access-Control-Allow-Origin", "*")
   private val cors = new CORSHandler {}
 
@@ -50,14 +50,14 @@ trait UserRoutes extends JsonSupport {
                 val userCreated = (registerUserActor ? CreateUser(user)).mapTo[ActionPerformed]
                 onSuccess(userCreated) { performed =>
                   log.info(s"Created User [${user.name}]: ${performed.action}")
-                    cors.corsHandler(complete(StatusCodes.Created, performed.action))
+                    cors.corsHandler(complete(StatusCodes.Created, performed))
                 }
               }
             })
         } ~
-          path(IntNumber) { id =>
+          path(Segment) { name =>
             get {
-              val maybeUser: Future[User] = (registerUserActor ? GetUser(id)).mapTo[User]
+              val maybeUser: Future[User] = (registerUserActor ? GetUser(name)).mapTo[User]
               rejectEmptyResponse {
                 respondWithDefaultHeader(allow) {
 
@@ -66,9 +66,9 @@ trait UserRoutes extends JsonSupport {
               }
             } ~
               delete {
-                val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(id)).mapTo[ActionPerformed]
+                val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(name)).mapTo[ActionPerformed]
                 onSuccess(userDeleted) { performed =>
-                  log.info(s"Deleted user $id", performed.action)
+                  log.info(s"Deleted user $name", performed.action)
                   complete(StatusCodes.OK, performed)
                 }
               }

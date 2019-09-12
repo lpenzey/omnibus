@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS users(
+  id         BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+  name       VARCHAR(200)   NOT NULL,
+  password   VARCHAR(200)   NOT NULL,
+);
+

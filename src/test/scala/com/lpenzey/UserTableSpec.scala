@@ -11,16 +11,12 @@ class UserTableSpec extends FunSuite with BeforeAndAfter with ScalaFutures with 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(5, Seconds))
     var db: Database = _
 
-    def createSchema() =
-      db.run((users.schema).create).futureValue
-
     def insertUser(): Int =
-      db.run(users += User(Some(1), "lucas", "lucasPassword")).futureValue
+      db.run(users += User(Some(1), "Lucas", "lucasPassword")).futureValue
 
-    before { db = Database.forConfig("h2mem1") }
+    before { db = Database.forConfig("database") }
 
   test("Can create a schema") {
-    createSchema()
 
     val tables = db.run(MTable.getTables).futureValue
 
@@ -29,18 +25,16 @@ class UserTableSpec extends FunSuite with BeforeAndAfter with ScalaFutures with 
   }
 
   test("Can insert a user") {
-    createSchema()
 
     val insertCount = insertUser()
     assert(insertCount == 1)
   }
 
   test("Can query for a user") {
-    createSchema()
     insertUser()
     val results = db.run(users.result).futureValue
     assert(results.size == 1)
-    assert(results.head.name == "lucas")
+    assert(results.head.name == "Lucas")
   }
 
   after { db.close }

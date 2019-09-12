@@ -20,7 +20,7 @@ object OmnibusServer extends App with UserRoutes with BusRoutes {
 
   lazy val routes: Route = userRoutes ~ busRoutes
   val port: Int = sys.env.getOrElse("PORT", "8080").toInt
-  val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", port)
+  val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "0.0.0.0", port)
 
   serverBinding.onComplete {
     case Success(bound) =>
