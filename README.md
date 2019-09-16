@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/lpenzey/omnibus.svg?branch=master)](https://travis-ci.org/lpenzey/omnibus)
+
 # Omnibus
 The brains behind the bus. 
 
