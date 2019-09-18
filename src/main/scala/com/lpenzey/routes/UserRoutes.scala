@@ -16,10 +16,11 @@ import scala.concurrent.Future
 import com.lpenzey.actors.RegisterUserActor._
 import akka.pattern.ask
 import akka.util.Timeout
-import com.lpenzey.JsonSupport
+import com.lpenzey.dao.UsersDao
 import com.lpenzey.models.{User, Users}
+import com.lpenzey.helpers.{AuthenticateBasicAsync, CORSHandler, JsonSupport}
 
-trait UserRoutes extends JsonSupport {
+trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
 
   implicit def system: ActorSystem
 
@@ -32,7 +33,6 @@ trait UserRoutes extends JsonSupport {
   private val cors = new CORSHandler {}
 
   def userRoutes: Route = pathPrefix("users") {
-
       pathPrefix("register") {
         pathEnd {
           concat(
@@ -73,7 +73,23 @@ trait UserRoutes extends JsonSupport {
                 }
               }
           }
+      } ~
+    Route.seal {
+      pathPrefix("login") {
+        pathEnd {
+          concat(
+            options {
+              cors.corsHandler(complete(StatusCodes.OK))
+            },
+            post {
+            authenticateBasicAsync("", UsersDao.authUser) { user =>
+              val token = registerUserActor ? CreateToken(user)
+              complete(StatusCodes.OK)
+            }
+          })
+        }
       }
     }
 
+  }
 }

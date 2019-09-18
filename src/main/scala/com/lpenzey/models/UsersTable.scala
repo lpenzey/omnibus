@@ -11,7 +11,6 @@ case class UserWithFavorite(user: User, favorite: Favorite)
 
 case class Users(users: Seq[User])
 
-
 trait DatabaseSchema {
 
   class UsersTable(tag: Tag) extends Table[User](tag, "users") {
@@ -40,8 +39,6 @@ trait DatabaseSchema {
     def * : ProvenShape[Favorite] = (id.?, userId, routeId, stopId) <> ((Favorite.apply _).tupled, Favorite.unapply)
   }
   val favorites = TableQuery[FavoritesTable]
-
-//  val allSchemas = users.schema ++ favorites.schema
 }
 
 

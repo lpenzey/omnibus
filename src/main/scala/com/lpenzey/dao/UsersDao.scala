@@ -1,5 +1,6 @@
 package com.lpenzey.dao
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import com.lpenzey.models.User
 import org.mindrot.jbcrypt.BCrypt
 import slick.jdbc.MySQLProfile.api._
@@ -7,6 +8,7 @@ import slick.jdbc.MySQLProfile.api._
 import scala.concurrent.Future
 
 object UsersDao extends BaseDao {
+
   def getUsers: Future[Seq[User]] = usersTable.result
 
   def createUser(user: User): Future[Int] = {
@@ -17,7 +19,7 @@ object UsersDao extends BaseDao {
 
   def findUserById(userId: Int): Future[User] = usersTable.filter(_.id === userId).result.head
 
-  def findUserByName(name: String): Future[User] = usersTable.filter(_.name === name).result.head
+  def findUserByName(name: String): Future[Option[User]] = usersTable.filter(_.name === name).result.headOption
 
   def deleteUser(name: String): Future[Int] = {
     usersTable.filter(_.name === name).delete
@@ -27,7 +29,15 @@ object UsersDao extends BaseDao {
     BCrypt.hashpw(password, BCrypt.gensalt(12))
   }
 
-//  def check(password: String): Boolean = {
-//    BCrypt.checkpw(password, "<hashed_password>")
-//  }
+  def authUser(username: String, password: String): Future[Option[User]] = {
+      val user: Future[Option[User]] = findUserByName(username)
+
+      user.map {
+        user =>
+          val maybeUser: User = user.getOrElse(User(None, "username", "$2a$12$ps5VQ3IfieufLOSzS2X6FetSOO/n8ms6UMjnd7Wt9TGJ.jbd74tR2"))
+            if (BCrypt.checkpw(password, maybeUser.password)) {
+              Some(user).flatten
+            } else None
+      }
+    }
 }
