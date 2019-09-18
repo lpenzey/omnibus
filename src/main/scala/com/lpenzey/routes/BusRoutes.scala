@@ -1,31 +1,33 @@
 package com.lpenzey.routes
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.Http
-
+import scala.concurrent.duration._
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
+import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
+import akka.util.Timeout
+import com.lpenzey.actors.BusDataActor.{GetDirections, GetPredictions, GetRoutes, GetStops, HttpWrapper}
 
 import scala.concurrent.Future
-
-import com.lpenzey.JsonSupport
+import com.lpenzey.helpers.{CORSHandler, JsonSupport}
 
 trait BusRoutes extends JsonSupport {
 
     final val BaseUri = "http://www.ctabustracker.com/bustime/api/v2/"
-    final val Key = "?&key=bvgb6SZYZJydq8SNfpk2gNZba"
+    lazy val Key: String = "?&key=" + System.getenv("BUS_TRACKER_API_KEY")
     final val JsonFormat = "&format=json"
     final val Stops = "getstops"
     final val Routes = "getroutes"
     final val Directions = "getdirections"
     final val Predictions = "getpredictions"
+    implicit lazy val timeout: Timeout = Timeout(10.seconds)
 
-  implicit def system: ActorSystem
-
-  private val cors = new CORSHandler {}
+    implicit def system: ActorSystem
+    def busDataActor: ActorRef
+    private val cors = new CORSHandler {}
 
   def busRoutes: Route = pathPrefix("api") {
 
@@ -33,8 +35,8 @@ trait BusRoutes extends JsonSupport {
       pathEnd {
         concat(
           get {
-            val stopsFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = BaseUri + Routes + Key + JsonFormat))
-            cors.corsHandler(complete(stopsFuture))
+            val routesFuture: Future[HttpResponse] = (busDataActor ? GetRoutes).mapTo[HttpResponse]
+            cors.corsHandler(complete(routesFuture))
           })
         }
     } ~
@@ -43,8 +45,7 @@ trait BusRoutes extends JsonSupport {
         concat(
           get {
             parameters('rt.as[String], 'dir.as[String]) { (route, direction) =>
-              val stopsUri = BaseUri + Stops + Key + "&rt=" + route + "&dir=" + direction + JsonFormat
-              val stopsFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = stopsUri))
+              val stopsFuture: Future[HttpResponse] = (busDataActor ? GetStops(route, direction)).mapTo[HttpResponse]
               cors.corsHandler(complete(stopsFuture))
             }
           })
@@ -55,9 +56,8 @@ trait BusRoutes extends JsonSupport {
           concat(
             get {
               parameters('rt.as[String]) { (route) =>
-                val stopsUri = BaseUri + Directions + Key + "&rt=" + route + JsonFormat
-                val stopsFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = stopsUri))
-                cors.corsHandler(complete(stopsFuture))
+                val directionsFuture: Future[HttpResponse] = (busDataActor ? GetDirections(route)).mapTo[HttpResponse]
+                cors.corsHandler(complete(directionsFuture))
               }
             })
         }
@@ -67,13 +67,12 @@ trait BusRoutes extends JsonSupport {
           concat(
             get {
               parameters('rt.as[String], 'stpid.as[String]) { (route, stopId) =>
-                val stopsUri = BaseUri + Predictions + Key + "&rt=" + route + "&stpid=" + stopId + JsonFormat
-                val stopsFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = stopsUri))
-                cors.corsHandler(complete(stopsFuture))
+                val predictionsFuture: Future[HttpResponse] = (busDataActor ? GetPredictions(route, stopId)).mapTo[HttpResponse]
+                cors.corsHandler(complete(predictionsFuture))
               }
             })
         }
       }
-}
+  }
 }
 
