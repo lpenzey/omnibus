@@ -5,8 +5,9 @@ scalaVersion := "2.13.0"
 lazy val akkaHttpVersion = "10.1.9"
 lazy val akkaVersion     = "2.5.25"
 
-envVars in Test := Map("SCALA_ENV" -> "test")
+fork in Test := true
 envVars in Test := Map("BUS_TRACKER_API_KEY" -> "secretkey")
+envVars in Test := Map("JWT_SECRET" -> "secretkey")
 enablePlugins(JavaAppPackaging)
 
 mainClass in Compile := Some("com.lpenzey.OmnibusServer")
