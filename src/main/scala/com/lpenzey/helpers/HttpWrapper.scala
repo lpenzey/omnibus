@@ -1,6 +1,5 @@
 package com.lpenzey.helpers
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import com.lpenzey.config.ActorSystemProvider

@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import com.lpenzey.actors.RegisterUserActor
 import com.lpenzey.models.{DatabaseSchema, User}
@@ -18,12 +19,12 @@ class UserRoutesSpec extends FreeSpec
   with ScalatestRouteTest
   with UserRoutes
   with DatabaseSchema {
-  implicit def default(implicit system: ActorSystem) = RouteTestTimeout(5.seconds)
+  implicit def default(implicit system: ActorSystem): RouteTestTimeout = RouteTestTimeout(5.seconds)
 
   override val registerUserActor: ActorRef =
   system.actorOf(RegisterUserActor.props, "userRegistry")
 
-  val routes = userRoutes
+  val routes: Route = userRoutes
 
   "UserRoutes" - {
     "return no users when table is empty (GET /users/register)" in {
@@ -83,18 +84,18 @@ class UserRoutesSpec extends FreeSpec
       val validCredentials = BasicHttpCredentials("Reggie", "Reggiespassword")
 
       request ~> addCredentials(validCredentials) ~> routes ~> check {
-        response.headers.contains("Authorization: ") should === (true)
+        assert(response.getHeader("Authorization").isPresent)
         status should ===(StatusCodes.OK)
       }
     }
 
     "deny access for an incorrect password (POST /users/login)" in {
       val request = Post(uri = "/users/login")
+      val invalidCredentials = BasicHttpCredentials("Reggie", "Notreggiespassword")
 
-      val validCredentials = BasicHttpCredentials("Reggie", "Notreggiespassword")
 
-      request ~> addCredentials(validCredentials) ~> routes ~> check {
-        status should ===(StatusCodes.Unauthorized)
+      request ~> addCredentials(invalidCredentials) ~> routes ~> check {
+        status should === (StatusCodes.Unauthorized)
       }
     }
 

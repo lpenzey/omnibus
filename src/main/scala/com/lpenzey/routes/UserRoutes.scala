@@ -5,8 +5,8 @@ import akka.event.Logging
 
 import scala.concurrent.duration._
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{HttpHeader, StatusCodes}
+import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, RawHeader}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
 import akka.http.scaladsl.server.directives.PathDirectives.path
@@ -20,6 +20,8 @@ import com.lpenzey.dao.UsersDao
 import com.lpenzey.models.{User, Users}
 import com.lpenzey.helpers.{AuthenticateBasicAsync, CORSHandler, JsonSupport}
 
+import scala.util.{Failure, Success}
+
 trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
 
   implicit def system: ActorSystem
@@ -30,7 +32,14 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
 
   implicit lazy val timeout: Timeout = Timeout(10.seconds)
   val allow = RawHeader("Access-Control-Allow-Origin", "*")
+
   private val cors = new CORSHandler {}
+
+  def extractAuthHeader: HttpHeader => Option[HttpCredentials] = {
+    case h: `Authorization` => Some(h.credentials)
+    case x         => None
+  }
+
 
   def userRoutes: Route = pathPrefix("users") {
       pathPrefix("register") {
@@ -39,7 +48,6 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
             get {
               val users: Future[Users] =
                 (registerUserActor ? GetUsers).mapTo[Users]
-
               complete(users)
             },
             options {
@@ -47,7 +55,7 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
             },
             post {
               entity(as[User]) { user =>
-                val userCreated = (registerUserActor ? CreateUser(user)).mapTo[ActionPerformed]
+                val userCreated: Future[ActionPerformed] = (registerUserActor ? CreateUser(user)).mapTo[ActionPerformed]
                 onSuccess(userCreated) { performed =>
                   log.info(s"Created User [${user.name}]: ${performed.action}")
                     cors.corsHandler(complete(StatusCodes.Created, performed))
@@ -60,12 +68,11 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
               val maybeUser: Future[User] = (registerUserActor ? GetUser(name)).mapTo[User]
               rejectEmptyResponse {
                 respondWithDefaultHeader(allow) {
-
                   complete(maybeUser)
                 }
               }
             } ~
-              delete {
+            delete {
                 val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(name)).mapTo[ActionPerformed]
                 onSuccess(userDeleted) { performed =>
                   log.info(s"Deleted user $name", performed.action)
@@ -82,14 +89,37 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
               cors.corsHandler(complete(StatusCodes.OK))
             },
             post {
-            authenticateBasicAsync("", UsersDao.authUser) { user =>
-              val token = registerUserActor ? CreateToken(user)
-              complete(StatusCodes.OK)
+              authenticateBasicAsync("", UsersDao.authUser) { user =>
+                val token: Future[Any] = registerUserActor ? CreateToken(user)
+                onSuccess(token) { token =>
+                  val authHeader = RawHeader("Authorization", "Bearer " + token.toString)
+                  cors.corsHandler(respondWithHeader(authHeader) {
+                    complete(StatusCodes.OK)
+                  })
+                }
+              }
             }
-          })
+          )
         }
-      }
+      } ~
+        pathPrefix("favorites") {
+          pathEnd {
+            concat(
+              options {
+                cors.corsHandler(complete(StatusCodes.OK))
+              },
+              get {
+                optionalHeaderValue(extractAuthHeader) { token =>
+                  val myToken = token.get.token
+                  val favorites: Future[Any] = registerUserActor ? GetFavorites(myToken)
+                  onSuccess(favorites) { favorites =>
+                    complete(favorites.toString)
+                  }
+                }
+              }
+            )
+          }
+        }
     }
-
   }
 }

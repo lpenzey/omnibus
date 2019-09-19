@@ -3,9 +3,12 @@ package com.lpenzey.routes
 object JSONFixtures {
   val key = System.getenv("BUS_TRACKER_API_KEY")
   val routesUri = "http://www.ctabustracker.com/bustime/api/v2/getroutes?&key=" + key + "&format=json"
-  val directionsUri = "http://www.ctabustracker.com/bustime/api/v2/getstops?&key=" + key + "&format=json"
-  val stopsUri = "http://www.ctabustracker.com/bustime/api/v2/getroutes?&key=" + key + "&format=json"
-  val predictionsUri = "http://www.ctabustracker.com/bustime/api/v2/getroutes?&key=" + key + "&format=json"
+
+  val directionsUri = "http://www.ctabustracker.com/bustime/api/v2/getdirections?&key=" + key + "&rt=70&format=json"
+
+  val stopsUri = "http://www.ctabustracker.com/bustime/api/v2/getstops?&key=" + key + "&rt=70&dir=Eastbound&format=json"
+
+  val predictionsUri = "http://www.ctabustracker.com/bustime/api/v2/getpredictions?&key=" + key + "&rt=70&stpid=2000&format=json"
 
   val routes = """{
                  	"bustime-response": {

@@ -17,28 +17,25 @@ class BusRoutesSpec extends FreeSpec
   with BusRoutes
   with MockFactory {
 
-  val routesFuture: Future[HttpResponse] = Marshal(JSONFixtures.routes).to[HttpResponse]
-  val directionsFuture: Future[HttpResponse] = Marshal(JSONFixtures.directions).to[HttpResponse]
-  val stopsFuture: Future[HttpResponse] = Marshal(JSONFixtures.stops).to[HttpResponse]
-  val predictionsFuture: Future[HttpResponse] = Marshal(JSONFixtures.predctions).to[HttpResponse]
+  val routesFuture:       Future[HttpResponse] = Marshal(JSONFixtures.routes).to[HttpResponse]
+  val directionsFuture:   Future[HttpResponse] = Marshal(JSONFixtures.directions).to[HttpResponse]
+  val stopsFuture:        Future[HttpResponse] = Marshal(JSONFixtures.stops).to[HttpResponse]
+  val predictionsFuture:  Future[HttpResponse] = Marshal(JSONFixtures.predctions).to[HttpResponse]
 
   val stubHttp: HttpWrapper = stub[HttpWrapper]
-
-
-
 
   override val busDataActor: ActorRef =
     system.actorOf(Props(new BusDataActor(stubHttp)), "busDataActor")
 
   val routes = busRoutes
     "BusRoutes" - {
-      "return all available routes (GET /api/routes)" in {
+      "returns all available routes (GET /api/routes)" in {
         stubHttp.externalService _ when JSONFixtures.routesUri returns routesFuture
         val routesRequest = HttpRequest(uri = "/api/routes")
 
         routesRequest ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[String] should === (JSONFixtures.routes)
+          status should ===(StatusCodes.OK)
+          entityAs[String] should === (JSONFixtures.routes)
       }
     }
       "return all directions for a given route (GET /api/directions)" in {
