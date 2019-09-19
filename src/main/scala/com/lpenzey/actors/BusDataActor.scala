@@ -48,6 +48,7 @@ class BusDataActor(httpWrapper: HttpWrapper = HttpWrapper) extends JsonSupport w
     case GetStops(route, direction) =>
       val stopsSender = sender
       val stopsUri = BaseUri + Stops + Key + "&rt=" + route + "&dir=" + direction + JsonFormat
+
       val stopsFuture: Future[HttpResponse] = getData(stopsUri)
 
       stopsFuture.onComplete {
@@ -64,6 +65,7 @@ class BusDataActor(httpWrapper: HttpWrapper = HttpWrapper) extends JsonSupport w
         case Success(dirs) => dirSender ! dirs
         case Failure(failedDirs) => dirSender ! failedDirs
       }
+
     case GetPredictions(route, stopId) =>
       val predictionSender = sender
       val predictionsUri = BaseUri + Predictions + Key + "&rt=" + route + "&stpid=" + stopId + JsonFormat

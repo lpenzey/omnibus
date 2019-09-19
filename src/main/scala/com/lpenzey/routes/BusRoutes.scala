@@ -55,7 +55,7 @@ trait BusRoutes extends JsonSupport {
         pathEnd {
           concat(
             get {
-              parameters('rt.as[String]) { (route) =>
+              parameters('rt.as[String]) { route =>
                 val directionsFuture: Future[HttpResponse] = (busDataActor ? GetDirections(route)).mapTo[HttpResponse]
                 cors.corsHandler(complete(directionsFuture))
               }
