@@ -1,12 +1,10 @@
 package com.lpenzey.actors
-import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtSprayJson}
-import java.time.Instant
 
+import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtSprayJson}
 import akka.actor.{Actor, ActorLogging, Props}
-import com.lpenzey.dao.UsersDao
-import com.lpenzey.models.{User, Users}
-import com.lpenzey.helpers.JsonSupport
-import spray.json.JsObject
+import com.lpenzey.dao.{FavoritesDao, UsersDao}
+import com.lpenzey.models.{Favorite, Favorites, User, Users}
+import com.lpenzey.helpers.{JsonSupport, TokenService}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -17,19 +15,20 @@ object RegisterUserActor {
   final case class CreateUser(user: User)
   final case class GetUser(name: String)
   final case class GetFavorites(token: String)
-  final case class DeleteUser(name: String)
+  final case class AddToFavorites(token: String, route: String, stopId: String)
+  final case class DeleteUser(token: String)
   final case class ActionPerformed(action: String)
   def props: Props = Props[RegisterUserActor]
 }
 
-class RegisterUserActor extends JsonSupport with Actor with ActorLogging {
+class RegisterUserActor extends JsonSupport with Actor with ActorLogging with TokenService  {
   import RegisterUserActor._
   import context.dispatcher
-
+  val key: String = System.getenv("JWT_SECRET")
   def receive: Receive = {
     case GetUsers =>
       val getUserSender = sender
-      val allUsers = UsersDao.getUsers
+      val allUsers: Future[Seq[User]] = UsersDao.getUsers
       allUsers.onComplete {
         case Success(usr) => getUserSender ! Users(usr)
         case Failure(failureUsr) =>  println(failureUsr.toString)
@@ -47,36 +46,78 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging {
         case Failure(failureUsr) => userSender ! failureUsr
       }
 
-    case DeleteUser(name) =>
-      val deluser = UsersDao.deleteUser(name)
+    case DeleteUser(token) =>
       val delSender = sender
-      deluser.onComplete {
-        case Success(delusr) => delSender ! ActionPerformed(s"User $name deleted")
-        case Failure(unDeletedUser) => delSender ! unDeletedUser
+      val splitToken = token.split(" ")
+      val realToken = splitToken(1)
+      val maybeAuthed: Try[JwtClaim] = JwtSprayJson.decode(realToken, key, Seq(JwtAlgorithm.HS256))
+      if (maybeAuthed.isSuccess) {
+        val userInfo: String = maybeAuthed.get.content
+        val numId = getUserId(userInfo)
+        val deluser = UsersDao.deleteUser(numId.get)
+        deluser.onComplete {
+          case Success(delusr) => delSender ! ActionPerformed(s"User was deleted")
+          case Failure(unDeletedUser) => delSender ! unDeletedUser
+        }
+      } else {
+        delSender ! ActionPerformed(s"There was an error")
       }
 
     case CreateToken(user) =>
       val tokenSender = sender
-      val expiration = Option(Instant.now.plusSeconds(40000).getEpochSecond)
-      val issuedAt =  Option(Instant.now.getEpochSecond)
-      val userName: String = user.name
-      val userId: String = user.id.toString
-      val claim = JwtClaim(s"""{"name":"$userName","id":"$userId"}""", None, None, None, expiration, None, issuedAt)
-      val key = System.getenv("JWT_SECRET")
-      val algo = JwtAlgorithm.HS256
-      val token: String = JwtSprayJson.encode(claim, key, algo)
+
+      val token: String = createToken(user)
+      val y = JwtSprayJson.decode(token, key, Seq(JwtAlgorithm.HS256))
 
       tokenSender ! token
 
     case GetFavorites(token) =>
       val favSender = sender
-      val key = System.getenv("JWT_SECRET")
 
-      val isAuthed: Try[JsObject] = JwtSprayJson.decodeJson(token, key, Seq(JwtAlgorithm.HS256))
+      val splitToken = token.split(" ")
+      val realToken = splitToken(1)
+      val isAuthed: Try[JwtClaim] = JwtSprayJson.decode(realToken, key, Seq(JwtAlgorithm.HS256))
       if (isAuthed.isSuccess) {
-        favSender ! "{success:favorites}"
+        val userInfo: String = isAuthed.get.content
+
+        val numId = getUserId(userInfo)
+        val favorites: Future[Seq[Favorite]] = FavoritesDao.getFavorites(numId.get)
+        favorites.onComplete {
+          case Success(favs: Seq[Favorite]) => favSender ! Favorites(favs)
+          case Failure(notFavs: Throwable) => favSender ! notFavs
+        }
       } else {
-        favSender ! "{failure}"
+        favSender ! None
+      }
+
+    case AddToFavorites(token, route, stopId) =>
+      val addToFavSender = sender
+
+      val splitToken = token.split(" ")
+      val realToken = splitToken(1)
+      val isAuthed: Try[JwtClaim] = JwtSprayJson.decode(realToken, key, Seq(JwtAlgorithm.HS256))
+      if (isAuthed.isSuccess) {
+          val userInfo: String = isAuthed.get.content
+//          val numPattern = "[0-9]+".r
+//          val userId: Option[String] = numPattern.findFirstIn(userInfo)
+//
+//          def toInt(s: String): Option[Int] = {
+//            try {
+//              Some(Integer.parseInt(s.trim))
+//            } catch {
+//              case e: Exception => None
+//            }
+//          }
+
+          val numId = getUserId(userInfo)
+          val favorites: Future[Int] = FavoritesDao.addFavorite(numId.get, route, stopId)
+          favorites.onComplete {
+            case Success(favs) => addToFavSender ! favs
+            case Failure(notFavs) => addToFavSender ! notFavs
+          }
+      } else {
+        println(isAuthed.get.content)
+          addToFavSender ! None
       }
    }
 }
