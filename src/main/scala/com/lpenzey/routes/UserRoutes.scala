@@ -23,6 +23,7 @@ import com.lpenzey.helpers.{AuthenticateBasicAsync, CORSHandler, ExceptionHelper
 trait UserRoutes
   extends JsonSupport
     with AuthenticateBasicAsync
+  with ExceptionHelper
      {
 
   implicit def system: ActorSystem
@@ -32,7 +33,6 @@ trait UserRoutes
   def registerUserActor: ActorRef
 
   implicit lazy val timeout: Timeout = Timeout(10.seconds)
-  val allow = RawHeader("Access-Control-Allow-Origin", "*")
 
   private val cors = new CORSHandler {}
 
@@ -49,7 +49,7 @@ trait UserRoutes
             get {
               val users: Future[Users] =
                 (registerUserActor ? GetUsers).mapTo[Users]
-              complete(users)
+              cors.corsHandler(complete(users))
             },
             options {
               cors.corsHandler(complete(StatusCodes.OK))
@@ -68,8 +68,8 @@ trait UserRoutes
             get {
               val maybeUser: Future[User] = (registerUserActor ? GetUser(name)).mapTo[User]
               rejectEmptyResponse {
-                respondWithDefaultHeader(allow) {
-                  complete(maybeUser)
+                {
+                  cors.corsHandler(complete(maybeUser))
                 }
               }
             }
@@ -81,7 +81,7 @@ trait UserRoutes
           val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(myToken)).mapTo[ActionPerformed]
           onSuccess(userDeleted) { performed =>
             log.info(s"Deleted user", performed.action)
-            complete(StatusCodes.OK, performed)
+            cors.corsHandler(complete(StatusCodes.OK, performed))
           }
         }
       } ~
@@ -113,13 +113,12 @@ trait UserRoutes
               },
               get {
                 optionalHeaderValue(extractAuthHeader) { token =>
-                  val myToken = token.getOrElse("Notfound").toString
-                  if (myToken == "Notfound") {
-                    complete(StatusCodes.Unauthorized)
+                  val myToken = token.getOrElse("Not found").toString
+                  if (myToken == "Not found") {
+                    cors.corsHandler(complete(StatusCodes.Unauthorized))
                   } else {
                     val favorites: Future[Favorites] = (registerUserActor ? GetFavorites(myToken)).mapTo[Favorites]
                     cors.corsHandler(complete(favorites))
-
                   }
                 }
               },
@@ -128,7 +127,7 @@ trait UserRoutes
                   optionalHeaderValue(extractAuthHeader) { token =>
                     val myToken = token.getOrElse("Notfound").toString
                     if (myToken == "Notfound") {
-                      complete(StatusCodes.Unauthorized)
+                      cors.corsHandler(complete(StatusCodes.Unauthorized))
                     } else {
                       val favorites: Future[Any] = registerUserActor ? AddToFavorites(myToken, route, stopId)
                       onSuccess(favorites) { favorites =>

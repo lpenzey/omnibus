@@ -25,6 +25,7 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
   import RegisterUserActor._
   import context.dispatcher
   val key: String = System.getenv("JWT_SECRET")
+
   def receive: Receive = {
     case GetUsers =>
       val getUserSender = sender
@@ -79,12 +80,14 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
       val isAuthed: Try[JwtClaim] = JwtSprayJson.decode(realToken, key, Seq(JwtAlgorithm.HS256))
       if (isAuthed.isSuccess) {
         val userInfo: String = isAuthed.get.content
+        val numId = getUserId(userInfo).get
+        val favorites: Future[Seq[Favorite]] = FavoritesDao.getFavorites(numId)
+        favorites.andThen {
+          case Success(favs: Seq[Favorite]) =>
+            favSender ! Favorites(favs)
+          case Failure(notFavs: Throwable) =>
 
-        val numId = getUserId(userInfo)
-        val favorites: Future[Seq[Favorite]] = FavoritesDao.getFavorites(numId.get)
-        favorites.onComplete {
-          case Success(favs: Seq[Favorite]) => favSender ! Favorites(favs)
-          case Failure(notFavs: Throwable) => favSender ! notFavs
+            favSender ! notFavs
         }
       } else {
         favSender ! None
@@ -101,11 +104,12 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
           val numId = getUserId(userInfo)
           val favorites: Future[Int] = FavoritesDao.addFavorite(numId.get, route, stopId)
           favorites.onComplete {
-            case Success(favs) => addToFavSender ! favs
-            case Failure(notFavs) => addToFavSender ! notFavs
+            case Success(favs) =>
+              addToFavSender ! favs
+            case Failure(notFavs) =>
+              addToFavSender ! notFavs
           }
       } else {
-        println(isAuthed.get.content)
           addToFavSender ! None
       }
    }
