@@ -12,11 +12,11 @@ import scala.concurrent.duration._
 trait CORSHandler {
 
   private val corsResponseHeaders = List(
-    `Access-Control-Allow-Origin`("http://localhost:3000"),
+    `Access-Control-Allow-Origin`("https://which-bus-chicago.herokuapp.com"),
     `Access-Control-Allow-Credentials`(true),
     `Access-Control-Expose-Headers`("Authorization"),
     `Access-Control-Allow-Headers`("Authorization",
-      "Content-Type", "X-Requested-With", "Set-Cookie"),
+      "Content-Type", "X-Requested-With"),
     `Access-Control-Max-Age`(1.day.toMillis)
   )
 
