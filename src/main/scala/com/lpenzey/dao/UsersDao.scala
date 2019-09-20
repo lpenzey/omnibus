@@ -17,8 +17,6 @@ object UsersDao extends BaseDao {
     usersTable.returning(usersTable.map(_.id)) += User(None, user.name, hashPw(user.password))
   }
 
-  def findUserById(userId: Int): Future[User] = usersTable.filter(_.id === userId).result.head
-
   def findUserByName(name: String): Future[Option[User]] = usersTable.filter(_.name === name).result.headOption
 
   def deleteUser(id: Int): Future[Int] = {

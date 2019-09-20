@@ -1,17 +1,11 @@
 package com.lpenzey.models
 
-import slick.jdbc.MySQLProfile
 import slick.jdbc.MySQLProfile.api._
 import slick.lifted.{ForeignKeyQuery, ProvenShape}
 
 case class User(id: Option[Int], name: String, password: String)
-
 case class Favorite(id: Option[Int] = None, userId: Int, route: String, stopId: String)
-
-case class UserWithFavorite(user: User, favorite: Favorite)
-
 case class Favorites(favorites: Seq[Favorite])
-
 case class Users(users: Seq[User])
 
 trait DatabaseSchema {
@@ -26,7 +20,6 @@ trait DatabaseSchema {
   val users = TableQuery[UsersTable]
 
   class FavoritesTable(tag: Tag) extends Table[Favorite](tag, "favorites") {
-
     def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
     def userId: Rep[Int] = column[Int]("userId")
     def route: Rep[String] = column[String]("route")

@@ -7,14 +7,15 @@ import scala.concurrent.Future
 
 object FavoritesDao extends BaseDao {
 
-  def getFavorites(userId: Int): Future[Seq[Favorite]] = favoritesTable.filter(_.userId === userId).result
+  def getFavorites(userId: Int): Future[Seq[Favorite]] = {
+    val compiledFavorites = Compiled { userId: Rep[Int] => favoritesTable.filter(_.userId === userId) }
 
-  def addFavorite(userId: Int, route: String, stopId: String): Future[Int] = {
-    favoritesTable.returning(favoritesTable.map(_.id)) += Favorite(None, userId, route, stopId)
+    val getFavoritesQuery =  compiledFavorites.extract
+    getFavoritesQuery(userId).result
   }
+  def addFavorite(userId: Int, route: String, stopId: String): Future[Int] = {
 
-  def deleteUser(id: Int): Future[Int] = {
-    usersTable.filter(_.id === id).delete
+    favoritesTable.returning(favoritesTable.map(_.id)) += Favorite(None, userId, route, stopId)
   }
 
 }
