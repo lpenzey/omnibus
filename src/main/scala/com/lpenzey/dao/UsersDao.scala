@@ -21,8 +21,8 @@ object UsersDao extends BaseDao {
 
   def findUserByName(name: String): Future[Option[User]] = usersTable.filter(_.name === name).result.headOption
 
-  def deleteUser(name: String): Future[Int] = {
-    usersTable.filter(_.name === name).delete
+  def deleteUser(id: Int): Future[Int] = {
+    usersTable.filter(_.id === id).delete
   }
 
   def hashPw(password: String): String = {
@@ -34,7 +34,7 @@ object UsersDao extends BaseDao {
 
       user.map {
         user =>
-          val maybeUser: User = user.getOrElse(User(None, "username", "$2a$12$ps5VQ3IfieufLOSzS2X6FetSOO/n8ms6UMjnd7Wt9TGJ.jbd74tR2"))
+          val maybeUser: User = user.getOrElse(User(None, "anonexistantusername", "$2a$12$ps5VQ3IfieufLOSzS2X6FetSOO/n8ms6UMjnd7Wt9TGJ.jbd74tR2"))
             if (BCrypt.checkpw(password, maybeUser.password)) {
               Some(user).flatten
             } else None

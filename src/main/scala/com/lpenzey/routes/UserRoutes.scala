@@ -12,17 +12,18 @@ import akka.http.scaladsl.server.directives.MethodDirectives.{delete, get, post}
 import akka.http.scaladsl.server.directives.PathDirectives.path
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import com.lpenzey.actors.RegisterUserActor._
 import akka.pattern.ask
 import akka.util.Timeout
 import com.lpenzey.dao.UsersDao
-import com.lpenzey.models.{User, Users}
-import com.lpenzey.helpers.{AuthenticateBasicAsync, CORSHandler, JsonSupport}
+import com.lpenzey.models.{Favorites, User, Users}
+import com.lpenzey.helpers.{AuthenticateBasicAsync, CORSHandler, ExceptionHelper, JsonSupport}
 
-import scala.util.{Failure, Success}
-
-trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
+trait UserRoutes
+  extends JsonSupport
+    with AuthenticateBasicAsync
+     {
 
   implicit def system: ActorSystem
 
@@ -40,8 +41,8 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
     case x         => None
   }
 
-
   def userRoutes: Route = pathPrefix("users") {
+
       pathPrefix("register") {
         pathEnd {
           concat(
@@ -58,7 +59,7 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
                 val userCreated: Future[ActionPerformed] = (registerUserActor ? CreateUser(user)).mapTo[ActionPerformed]
                 onSuccess(userCreated) { performed =>
                   log.info(s"Created User [${user.name}]: ${performed.action}")
-                    cors.corsHandler(complete(StatusCodes.Created, performed))
+                  cors.corsHandler(complete(StatusCodes.Created, performed))
                 }
               }
             })
@@ -71,17 +72,19 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
                   complete(maybeUser)
                 }
               }
-            } ~
-            delete {
-                val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(name)).mapTo[ActionPerformed]
-                onSuccess(userDeleted) { performed =>
-                  log.info(s"Deleted user $name", performed.action)
-                  complete(StatusCodes.OK, performed)
-                }
-              }
+            }
           }
       } ~
-    Route.seal {
+      delete {
+        optionalHeaderValue(extractAuthHeader) { token =>
+          val myToken = token.getOrElse("not a token").toString
+          val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(myToken)).mapTo[ActionPerformed]
+          onSuccess(userDeleted) { performed =>
+            log.info(s"Deleted user", performed.action)
+            complete(StatusCodes.OK, performed)
+          }
+        }
+      } ~
       pathPrefix("login") {
         pathEnd {
           concat(
@@ -110,10 +113,29 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
               },
               get {
                 optionalHeaderValue(extractAuthHeader) { token =>
-                  val myToken = token.get.token
-                  val favorites: Future[Any] = registerUserActor ? GetFavorites(myToken)
-                  onSuccess(favorites) { favorites =>
-                    complete(favorites.toString)
+                  val myToken = token.getOrElse("Notfound").toString
+                  if (myToken == "Notfound") {
+                    complete(StatusCodes.Unauthorized)
+                  } else {
+                    val favorites: Future[Favorites] = (registerUserActor ? GetFavorites(myToken)).mapTo[Favorites]
+                    cors.corsHandler(complete(favorites))
+
+                  }
+                }
+              },
+              post {
+                parameters('rt.as[String], 'stpid.as[String]) { (route, stopId) =>
+                  optionalHeaderValue(extractAuthHeader) { token =>
+                    val myToken = token.getOrElse("Notfound").toString
+                    if (myToken == "Notfound") {
+                      complete(StatusCodes.Unauthorized)
+                    } else {
+                      val favorites: Future[Any] = registerUserActor ? AddToFavorites(myToken, route, stopId)
+                      onSuccess(favorites) { favorites =>
+                        cors.corsHandler(complete(favorites.toString))
+
+                      }
+                    }
                   }
                 }
               }
@@ -121,5 +143,4 @@ trait UserRoutes extends JsonSupport with AuthenticateBasicAsync {
           }
         }
     }
-  }
 }

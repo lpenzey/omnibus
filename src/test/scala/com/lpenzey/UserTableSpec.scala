@@ -20,7 +20,7 @@ class UserTableSpec extends FreeSpec with BeforeAndAfter with ScalaFutures with 
     "create a schema" in {
       val tables = db.run(MTable.getTables).futureValue
 
-      assert(tables.size == 1)
+      assert(tables.size == 2)
       assert(tables.count(_.name.name.equalsIgnoreCase("users")) == 1)
     }
 
