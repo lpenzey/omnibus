@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 trait CORSHandler {
 
   private val corsResponseHeaders = List(
-    `Access-Control-Allow-Origin`.*,
+    `Access-Control-Allow-Origin`("http://localhost:3000"),
     `Access-Control-Allow-Credentials`(true),
     `Access-Control-Expose-Headers`("Authorization"),
     `Access-Control-Allow-Headers`("Authorization",
@@ -26,7 +26,7 @@ trait CORSHandler {
 
   private def preflightRequestHandler: Route = options {
     complete(HttpResponse(StatusCodes.OK).
-      withHeaders(`Access-Control-Allow-Methods`(OPTIONS, POST, PUT, GET, DELETE)))
+      withHeaders(`Access-Control-Allow-Methods`(OPTIONS, POST, GET, DELETE)))
   }
 
   def corsHandler(r: Route): Route = addAccessControlHeaders {
