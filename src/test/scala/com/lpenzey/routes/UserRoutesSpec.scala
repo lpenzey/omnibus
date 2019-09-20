@@ -31,7 +31,7 @@ class UserRoutesSpec extends FreeSpec
 
   "UserRoutes" - {
     "return no users when table is empty (GET /users/register)" in {
-      HttpRequest(uri = "/users/register") ~> Route.seal(routes) ~> check {
+      HttpRequest(uri = "/v1/users/register") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
 
         contentType should === (ContentTypes.`application/json`)
@@ -44,7 +44,7 @@ class UserRoutesSpec extends FreeSpec
       val user = User(Some(42), "Reggie", "Reggiespassword")
       val userEntity = Marshal(user).to[MessageEntity].futureValue
 
-      Post("/users/register").withEntity(userEntity) ~> Route.seal(routes) ~> check {
+      Post("/v1/users/register").withEntity(userEntity) ~> Route.seal(routes) ~> check {
         status should ===(StatusCodes.Created)
 
         contentType should ===(ContentTypes.`application/json`)
@@ -54,7 +54,7 @@ class UserRoutesSpec extends FreeSpec
     }
 
     "return one user (GET /users/register)" in {
-      HttpRequest(uri = "/users/register") ~> Route.seal(routes) ~> check {
+      HttpRequest(uri = "/v1/users/register") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
 
         contentType should === (ContentTypes.`application/json`)
@@ -65,7 +65,7 @@ class UserRoutesSpec extends FreeSpec
 
     "be able to find users (GET /users/register)" in {
 
-      HttpRequest(uri = "/users/register/Reggie") ~> Route.seal(routes) ~> check {
+      HttpRequest(uri = "/v1/users/register/Reggie") ~> Route.seal(routes) ~> check {
         status should ===(StatusCodes.OK)
 
         contentType should ===(ContentTypes.`application/json`)
@@ -77,7 +77,7 @@ class UserRoutesSpec extends FreeSpec
     "let a authenticated user login (POST /users/login)" in {
       val validCredentials = BasicHttpCredentials("Reggie", "Reggiespassword")
 
-      Post(uri = "/users/login") ~> addCredentials(validCredentials) ~> Route.seal(routes) ~> check {
+      Post(uri = "/v1/users/login") ~> addCredentials(validCredentials) ~> Route.seal(routes) ~> check {
         assert(response.getHeader("Authorization").isPresent)
         status should ===(StatusCodes.OK)
       }
@@ -86,7 +86,7 @@ class UserRoutesSpec extends FreeSpec
     "deny access for an incorrect password (POST /users/login)" in {
       val invalidCredentials = BasicHttpCredentials("Reggie", "Notreggiespassword")
 
-      Post(uri = "/users/login") ~> addCredentials(invalidCredentials) ~> Route.seal(routes) ~> check {
+      Post(uri = "/v1/users/login") ~> addCredentials(invalidCredentials) ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
@@ -94,13 +94,13 @@ class UserRoutesSpec extends FreeSpec
     "deny access for an non-existant user (POST /users/login)" in {
       val validCredentials = BasicHttpCredentials("Joseph", "joespassword")
 
-      Post(uri = "/users/login") ~> addCredentials(validCredentials) ~> Route.seal(routes) ~> check {
+      Post(uri = "/v1/users/login") ~> addCredentials(validCredentials) ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
 
     "deny access to favorites if not logged in (GET /users/favorites)" in {
-      Get(uri = "/users/favorites")  ~> Route.seal(routes) ~> check {
+      Get(uri = "/v1/users/favorites")  ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
@@ -112,14 +112,14 @@ class UserRoutesSpec extends FreeSpec
       val token: String = createToken(reggie.get)
 
       val reggiesToken = OAuth2BearerToken(token)
-      Get(uri = "/users/favorites") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
+      Get(uri = "/v1/users/favorites") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
       }
     }
 
     "not allow creating new favorite if no credentials (POST /users/favorites)" in {
 
-      Post(uri = "/users/favorites?rt=70&stpid=2000") ~> Route.seal(routes) ~> check {
+      Post(uri = "/v1/users/favorites?rt=70&stpid=2000") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
@@ -130,7 +130,7 @@ class UserRoutesSpec extends FreeSpec
       val token: String = createToken(reggie.get)
 
       val reggiesToken = OAuth2BearerToken(token)
-      Post(uri = "/users/favorites?rt=70&stpid=2000") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
+      Post(uri = "/v1/users/favorites?rt=70&stpid=2000") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
       }
     }
@@ -138,7 +138,7 @@ class UserRoutesSpec extends FreeSpec
     "not delete a user who has invalid credentials" in {
       val notValidCredentials = BasicHttpCredentials("Reggie", "reggiespssword")
 
-      Delete(uri = "/users/register") ~> addCredentials(notValidCredentials) ~> Route.seal(routes) ~> check {
+      Delete(uri = "/v1/users/register") ~> addCredentials(notValidCredentials) ~> Route.seal(routes) ~> check {
         entityAs[String] should ===("""{"action":"There was an error"}""")    }
     }
 
@@ -151,7 +151,7 @@ class UserRoutesSpec extends FreeSpec
 
       val reggiesToken = OAuth2BearerToken(tokenValue)
 
-      Delete(uri = "/users/register") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
+      Delete(uri = "/v1/users/register") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
         entityAs[String] should ===("""{"action":"User was deleted"}""")    }
     }
   }

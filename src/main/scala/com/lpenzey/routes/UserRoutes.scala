@@ -41,8 +41,8 @@ trait UserRoutes
     case x         => None
   }
 
-  def userRoutes: Route = pathPrefix("users") {
-
+  def userRoutes: Route = pathPrefix("v1") {
+    pathPrefix("users") {
       pathPrefix("register") {
         pathEnd {
           concat(
@@ -75,36 +75,36 @@ trait UserRoutes
             }
           }
       } ~
-      delete {
-        optionalHeaderValue(extractAuthHeader) { token =>
-          val myToken = token.getOrElse("not a token").toString
-          val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(myToken)).mapTo[ActionPerformed]
-          onSuccess(userDeleted) { performed =>
-            log.info(s"Deleted user", performed.action)
-            cors.corsHandler(complete(StatusCodes.OK, performed))
+        delete {
+          optionalHeaderValue(extractAuthHeader) { token =>
+            val myToken = token.getOrElse("not a token").toString
+            val userDeleted: Future[ActionPerformed] = (registerUserActor ? DeleteUser(myToken)).mapTo[ActionPerformed]
+            onSuccess(userDeleted) { performed =>
+              log.info(s"Deleted user", performed.action)
+              cors.corsHandler(complete(StatusCodes.OK, performed))
+            }
           }
-        }
-      } ~
-      pathPrefix("login") {
-        pathEnd {
-          concat(
-            options {
-              cors.corsHandler(complete(StatusCodes.OK))
-            },
-            post {
-              authenticateBasicAsync("", UsersDao.authUser) { user =>
-                val token: Future[Any] = registerUserActor ? CreateToken(user)
-                onSuccess(token) { token =>
-                  val authHeader = RawHeader("Authorization", "Bearer " + token.toString)
-                  cors.corsHandler(respondWithHeader(authHeader) {
-                    complete(StatusCodes.OK)
-                  })
+        } ~
+        pathPrefix("login") {
+          pathEnd {
+            concat(
+              options {
+                cors.corsHandler(complete(StatusCodes.OK))
+              },
+              post {
+                authenticateBasicAsync("", UsersDao.authUser) { user =>
+                  val token: Future[Any] = registerUserActor ? CreateToken(user)
+                  onSuccess(token) { token =>
+                    val authHeader = RawHeader("Authorization", "Bearer " + token.toString)
+                    cors.corsHandler(respondWithHeader(authHeader) {
+                      complete(StatusCodes.OK)
+                    })
+                  }
                 }
               }
-            }
-          )
-        }
-      } ~
+            )
+          }
+        } ~
         pathPrefix("favorites") {
           pathEnd {
             concat(
@@ -142,4 +142,5 @@ trait UserRoutes
           }
         }
     }
+  }
 }

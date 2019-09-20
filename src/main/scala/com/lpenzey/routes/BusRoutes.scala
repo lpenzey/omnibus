@@ -29,50 +29,51 @@ trait BusRoutes extends JsonSupport {
     def busDataActor: ActorRef
     private val cors = new CORSHandler {}
 
-  def busRoutes: Route = pathPrefix("api") {
-
-    pathPrefix("routes") {
-      pathEnd {
-        concat(
-          get {
-            val routesFuture: Future[HttpResponse] = (busDataActor ? GetRoutes).mapTo[HttpResponse]
-            cors.corsHandler(complete(routesFuture))
-          })
-        }
-    } ~
-    pathPrefix("stops") {
-      pathEnd {
-        concat(
-          get {
-            parameters('rt.as[String], 'dir.as[String]) { (route, direction) =>
-              val stopsFuture: Future[HttpResponse] = (busDataActor ? GetStops(route, direction)).mapTo[HttpResponse]
-              cors.corsHandler(complete(stopsFuture))
-            }
-          })
-      }
-    } ~
-      pathPrefix("directions") {
+  def busRoutes: Route = pathPrefix("v1") {
+    pathPrefix("api") {
+      pathPrefix("routes") {
         pathEnd {
           concat(
             get {
-              parameters('rt.as[String]) { route =>
-                val directionsFuture: Future[HttpResponse] = (busDataActor ? GetDirections(route)).mapTo[HttpResponse]
-                cors.corsHandler(complete(directionsFuture))
-              }
+              val routesFuture: Future[HttpResponse] = (busDataActor ? GetRoutes).mapTo[HttpResponse]
+              cors.corsHandler(complete(routesFuture))
             })
         }
       } ~
-      pathPrefix("predictions") {
-        pathEnd {
-          concat(
-            get {
-              parameters('rt.as[String], 'stpid.as[String]) { (route, stopId) =>
-                val predictionsFuture: Future[HttpResponse] = (busDataActor ? GetPredictions(route, stopId)).mapTo[HttpResponse]
-                cors.corsHandler(complete(predictionsFuture))
-              }
-            })
+        pathPrefix("stops") {
+          pathEnd {
+            concat(
+              get {
+                parameters('rt.as[String], 'dir.as[String]) { (route, direction) =>
+                  val stopsFuture: Future[HttpResponse] = (busDataActor ? GetStops(route, direction)).mapTo[HttpResponse]
+                  cors.corsHandler(complete(stopsFuture))
+                }
+              })
+          }
+        } ~
+        pathPrefix("directions") {
+          pathEnd {
+            concat(
+              get {
+                parameters('rt.as[String]) { route =>
+                  val directionsFuture: Future[HttpResponse] = (busDataActor ? GetDirections(route)).mapTo[HttpResponse]
+                  cors.corsHandler(complete(directionsFuture))
+                }
+              })
+          }
+        } ~
+        pathPrefix("predictions") {
+          pathEnd {
+            concat(
+              get {
+                parameters('rt.as[String], 'stpid.as[String]) { (route, stopId) =>
+                  val predictionsFuture: Future[HttpResponse] = (busDataActor ? GetPredictions(route, stopId)).mapTo[HttpResponse]
+                  cors.corsHandler(complete(predictionsFuture))
+                }
+              })
+          }
         }
-      }
+    }
   }
 }
 

@@ -31,7 +31,7 @@ class BusRoutesSpec extends FreeSpec
     "BusRoutes" - {
       "returns all available routes (GET /api/routes)" in {
         stubHttp.externalService _ when JSONFixtures.routesUri returns routesFuture
-        val routesRequest = HttpRequest(uri = "/api/routes")
+        val routesRequest = HttpRequest(uri = "/v1/api/routes")
 
         routesRequest ~> routes ~> check {
           status should ===(StatusCodes.OK)
@@ -40,7 +40,7 @@ class BusRoutesSpec extends FreeSpec
     }
       "return all directions for a given route (GET /api/directions)" in {
         stubHttp.externalService _ when JSONFixtures.directionsUri returns directionsFuture
-        val directionsRequest = HttpRequest(uri = "/api/directions?rt=70")
+        val directionsRequest = HttpRequest(uri = "/v1/api/directions?rt=70")
 
         directionsRequest ~> routes ~> check {
           status should ===(StatusCodes.OK)
@@ -49,7 +49,7 @@ class BusRoutesSpec extends FreeSpec
       }
       "return all stops for a given route and direction (GET /api/stops)" in {
       stubHttp.externalService _ when JSONFixtures.stopsUri returns stopsFuture
-        val stopsRequest = HttpRequest(uri = "/api/stops?rt=70&dir=Eastbound")
+        val stopsRequest = HttpRequest(uri = "/v1/api/stops?rt=70&dir=Eastbound")
 
         stopsRequest ~> routes ~> check {
           status should ===(StatusCodes.OK)
@@ -58,7 +58,7 @@ class BusRoutesSpec extends FreeSpec
       }
       "return all predictions for a given route and stopId (GET /api/predictions)" in {
         stubHttp.externalService _ when JSONFixtures.predictionsUri returns predictionsFuture
-        val stopsRequest = HttpRequest(uri = "/api/predictions?rt=70&stpid=2000")
+        val stopsRequest = HttpRequest(uri = "/v1/api/predictions?rt=70&stpid=2000")
 
         stopsRequest ~> routes ~> check {
           status should ===(StatusCodes.OK)

@@ -9,7 +9,7 @@ Written in [Scala](https://scala-lang.org)
 
 ## Run the project
 
-This repository uses [SBT](http://www.scala-sbt.org/) as build tool. 
+This repository uses [SBT](http://www.scala-sbt.org/) as the build tool. 
 
 To run the project clone this repository and import it into your IDE or run the following command:
 
@@ -43,24 +43,45 @@ The finally within each test (won't work if all of these are instantiated before
 
 Access to the main bus estimate portal is public and has the following routes:
 
-###Bus Routes
-`/api/routes`
+### Bus Routes
 
-`/api/stops`
+`/api/routes` 
+  
+ `get` - no parameters. Returns all available bus routes. 
+
+`/api/stops` 
+
+ `get` - returns stops for a given route and direction with the parameters `rt` and `dir`. 
+ 
+ Example: `/api/stops?rt=70&dir=Eastbound`
 
 `/api/directions`
 
+ `get` - returns directions for a given route with the parameter `rt`. 
+ 
+ Example: `/api/directions?rt=70`
+
+
 `/api/predictions`
 
-###User Routes
-Access to favorites is protected. To gain access, create an account over at: `/users/register`
+ `get` - returns available bus predictions for a given route and stop id with parameters `rt` and `stpid`. 
+ 
+ Example: `/api/predictions?rt=70&stpid=2000`
+
+
+### User Routes
+
+Access to favorites is protected. To gain access, create an account over at:
+
+`/users/register`
 
 `/users/login`
 
 `/users/favorites`
 
 
-###Features to add
+### Features to add
+
 - Logout: Currently the authorization token is stored in session storage and comes with an expiration date of 10 hours. It would be great to implement server-side revocation of a compromised token, or for a logged out user. 
 - Delete a user: This is implemented on the back end but needs a front end component
 - Delete a favorite
