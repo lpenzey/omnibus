@@ -98,17 +98,6 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
       val isAuthed: Try[JwtClaim] = JwtSprayJson.decode(realToken, key, Seq(JwtAlgorithm.HS256))
       if (isAuthed.isSuccess) {
           val userInfo: String = isAuthed.get.content
-//          val numPattern = "[0-9]+".r
-//          val userId: Option[String] = numPattern.findFirstIn(userInfo)
-//
-//          def toInt(s: String): Option[Int] = {
-//            try {
-//              Some(Integer.parseInt(s.trim))
-//            } catch {
-//              case e: Exception => None
-//            }
-//          }
-
           val numId = getUserId(userInfo)
           val favorites: Future[Int] = FavoritesDao.addFavorite(numId.get, route, stopId)
           favorites.onComplete {

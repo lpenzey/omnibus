@@ -19,3 +19,26 @@ This will download necessary dependencies and run the project and will start lis
 
 To build and test this project, run ``sbt test``. 
 
+## Available routes
+
+Access to the main bus estimate portal is public and has the following routes:
+
+###Bus Routes
+`/api/routes`
+
+`/api/stops`
+
+`/api/directions`
+
+`/api/predictions`
+
+###User Routes
+Access to favorites is protected. To gain access, create an account over at: `/users/register`
+
+
+
+`/users/login`
+
+`/users/favorites`
+
+

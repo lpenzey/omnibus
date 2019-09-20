@@ -1,6 +1,6 @@
 package com.lpenzey.config
 
-trait DatabaseConfig extends Config {
+object DatabaseConfig  {
 
   val driver = slick.jdbc.MySQLProfile
 
