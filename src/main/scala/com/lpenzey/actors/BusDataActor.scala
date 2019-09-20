@@ -42,7 +42,7 @@ class BusDataActor(httpWrapper: HttpWrapper = HttpWrapper) extends JsonSupport w
 
       routesFuture.onComplete {
         case Success(routes) => routeSender ! routes
-        case Failure(failedRoutes) =>  println(failedRoutes.toString)
+        case Failure(failedRoutes) =>  routeSender ! failedRoutes
       }
 
     case GetStops(route, direction) =>
@@ -53,7 +53,7 @@ class BusDataActor(httpWrapper: HttpWrapper = HttpWrapper) extends JsonSupport w
 
       stopsFuture.onComplete {
         case Success(routes) => stopsSender ! routes
-        case Failure(failedRoutes) =>  println(failedRoutes.toString)
+        case Failure(failedStops) =>  stopsSender ! failedStops
       }
 
     case GetDirections(route) =>

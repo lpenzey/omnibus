@@ -13,7 +13,7 @@ This repository uses [SBT](http://www.scala-sbt.org/) as build tool.
 
 To run the project clone this repository and import it into your IDE or run the following command:
 
-Note: before running locally, modify the `Access-Control-Allow-Origin` field in `/lpenzey/helpsers/CORShandler` with your client connection (e.g. `http://localhost:3000`)
+(Note: before running locally, modify the `Access-Control-Allow-Origin` field in `/lpenzey/helpers/CORShandler` with your client connection (e.g. `http://localhost:3000`))
 ```
 sbt run
 ```

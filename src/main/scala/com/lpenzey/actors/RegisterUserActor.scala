@@ -90,7 +90,7 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
             favSender ! notFavs
         }
       } else {
-        favSender ! None
+        favSender ! akka.actor.Status.Failure(new Throwable("An error occurred"))
       }
 
     case AddToFavorites(token, route, stopId) =>
@@ -110,7 +110,7 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
               addToFavSender ! notFavs
           }
       } else {
-          addToFavSender ! None
+          addToFavSender ! akka.actor.Status.Failure(new Throwable("An error occurred"))
       }
    }
 }
