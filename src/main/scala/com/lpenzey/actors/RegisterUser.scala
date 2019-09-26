@@ -32,19 +32,32 @@ class RegisterUser extends JsonSupport with Actor with ActorLogging with TokenSe
       val allUsers: Future[Seq[User]] = UsersDao.getUsers
       allUsers.onComplete {
         case Success(usr) => getUserSender ! Users(usr)
-        case Failure(failureUsr) =>  println(failureUsr.toString)
+        case Failure(failureUsr) =>  getUserSender ! failureUsr
       }
 
     case CreateUser(user) =>
-      UsersDao.createUser(user)
-      sender() ! ActionPerformed(s"User ${user.name} created.")
+      val createSender = sender
+
+      val exists: Future[Option[User]] = UsersDao.findUserByName(user.name)
+      exists.onComplete {
+        case Success(usr) =>
+          if (usr.isEmpty) {
+            UsersDao.createUser(user)
+            createSender ! ActionPerformed(s"User ${user.name} created.")
+        } else {
+            createSender ! ActionPerformed(s"There was an issue creating this user, try something else.")
+          }
+        case Failure(failureUsr) => createSender ! failureUsr
+      }
 
     case GetUser(name) =>
       val userSender = sender
       val user: Future[Option[User]] = UsersDao.findUserByName(name)
       user.onComplete {
-        case Success(usr) => userSender ! usr.get.copy()
-        case Failure(failureUsr) => userSender ! failureUsr
+        case Success(usr) =>
+          userSender ! usr.getOrElse("No user found")
+        case Failure(failureUsr) =>
+          userSender ! failureUsr
       }
 
     case DeleteUser(token) =>
