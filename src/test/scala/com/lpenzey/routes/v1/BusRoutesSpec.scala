@@ -1,4 +1,4 @@
-package com.lpenzey.routes
+package com.lpenzey.routes.v1
 
 import akka.actor.{ActorRef, Props}
 import akka.http.scaladsl.marshalling.Marshal
@@ -6,9 +6,9 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.lpenzey.actors.BusData
 import com.lpenzey.helpers.HttpWrapper
-import com.lpenzey.routes.v1.BusRoutes
-import org.scalatest.{FreeSpec, Matchers}
+import com.lpenzey.routes.JSONFixtures
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.{FreeSpec, Matchers}
 
 import scala.concurrent.Future
 
@@ -25,8 +25,8 @@ class BusRoutesSpec extends FreeSpec
 
   val stubHttp: HttpWrapper = stub[HttpWrapper]
 
-  override val busDataActor: ActorRef =
-    system.actorOf(Props(new BusData(stubHttp)), "busDataActor")
+  override val busData: ActorRef =
+    system.actorOf(Props(new BusData(stubHttp)), "busData")
 
   val routes = busRoutes
     "BusRoutes" - {
