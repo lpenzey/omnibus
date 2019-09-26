@@ -1,6 +1,6 @@
 package com.lpenzey.helpers
 
-import com.lpenzey.actors.RegisterUserActor.ActionPerformed
+import com.lpenzey.actors.RegisterUser.ActionPerformed
 import com.lpenzey.models.{Favorite, Favorites, User, Users}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}

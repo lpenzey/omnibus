@@ -6,10 +6,11 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import com.lpenzey.actors.RegisterUserActor
+import com.lpenzey.actors.RegisterUser
 import com.lpenzey.dao.{FavoritesDao, UsersDao}
 import com.lpenzey.helpers.TokenService
 import com.lpenzey.models.{DatabaseSchema, User}
+import com.lpenzey.routes.v1.UserRoutes
 import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.duration._
@@ -25,7 +26,7 @@ class UserRoutesSpec extends FreeSpec
   implicit def default(implicit system: ActorSystem): RouteTestTimeout = RouteTestTimeout(5.seconds)
 
   override val registerUserActor: ActorRef =
-  system.actorOf(RegisterUserActor.props, "userRegistry")
+  system.actorOf(RegisterUser.props, "userRegistry")
 
   val routes: Route = userRoutes
 

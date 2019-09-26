@@ -4,8 +4,9 @@ import akka.actor.{ActorRef, Props}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.lpenzey.actors.BusDataActor
+import com.lpenzey.actors.BusData
 import com.lpenzey.helpers.HttpWrapper
+import com.lpenzey.routes.v1.BusRoutes
 import org.scalatest.{FreeSpec, Matchers}
 import org.scalamock.scalatest.MockFactory
 
@@ -25,7 +26,7 @@ class BusRoutesSpec extends FreeSpec
   val stubHttp: HttpWrapper = stub[HttpWrapper]
 
   override val busDataActor: ActorRef =
-    system.actorOf(Props(new BusDataActor(stubHttp)), "busDataActor")
+    system.actorOf(Props(new BusData(stubHttp)), "busDataActor")
 
   val routes = busRoutes
     "BusRoutes" - {

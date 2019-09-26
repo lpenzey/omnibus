@@ -9,7 +9,7 @@ import com.lpenzey.helpers.{JsonSupport, TokenService}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-object RegisterUserActor {
+object RegisterUser {
   final case object GetUsers
   final case class CreateToken(user: User)
   final case class CreateUser(user: User)
@@ -18,11 +18,11 @@ object RegisterUserActor {
   final case class AddToFavorites(token: String, route: String, stopId: String)
   final case class DeleteUser(token: String)
   final case class ActionPerformed(action: String)
-  def props: Props = Props[RegisterUserActor]
+  def props: Props = Props[RegisterUser]
 }
 
-class RegisterUserActor extends JsonSupport with Actor with ActorLogging with TokenService  {
-  import RegisterUserActor._
+class RegisterUser extends JsonSupport with Actor with ActorLogging with TokenService  {
+  import RegisterUser._
   import context.dispatcher
   val key: String = System.getenv("JWT_SECRET")
 

@@ -2,26 +2,26 @@ package com.lpenzey.actors
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.http.scaladsl.model.HttpResponse
-import com.lpenzey.actors.BusDataActor.HttpWrapper
+import com.lpenzey.actors.BusData.HttpWrapper
 import com.lpenzey.helpers.JsonSupport
 import com.lpenzey.helpers.HttpWrapper
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-object BusDataActor  {
+object BusData  {
   final case object GetRoutes
   final case class GetStops(route: String, direction: String)
   final case class GetDirections(route: String)
   final case class GetPredictions(route: String, stopId: String)
-  def props: Props = Props[BusDataActor]
+  def props: Props = Props[BusData]
   object HttpWrapper extends HttpWrapper {
     override implicit def actorSystem: ActorSystem = ActorSystem("BusDataActor")
   }
 }
 
-class BusDataActor(httpWrapper: HttpWrapper = HttpWrapper) extends JsonSupport with Actor with ActorLogging  {
-  import BusDataActor._
+class BusData(httpWrapper: HttpWrapper = HttpWrapper) extends JsonSupport with Actor with ActorLogging  {
+  import BusData._
   import context.dispatcher
 
   final val BaseUri = "http://www.ctabustracker.com/bustime/api/v2/"
