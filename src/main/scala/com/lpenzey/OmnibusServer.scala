@@ -10,23 +10,25 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import com.lpenzey.actors.BusDataActor.HttpWrapper
-import com.lpenzey.actors.{BusDataActor, RegisterUserActor}
-import com.lpenzey.routes.{BusRoutes, UserRoutes}
+import com.lpenzey.actors.BusData.HttpWrapper
+import com.lpenzey.actors.{BusData, FavoritesActor, RegisterUser}
+import com.lpenzey.routes.v1.{BusRoutes, UserRoutes}
+import com.lpenzey.routes.v2.{BusRoutesv2, UserRoutesv2}
 
-object OmnibusServer extends App with UserRoutes with BusRoutes {
+object OmnibusServer extends App with UserRoutes with BusRoutes with BusRoutesv2 with UserRoutesv2 {
 
   implicit val system: ActorSystem = ActorSystem("omnibusServer")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
-  val registerUserActor: ActorRef = system.actorOf(RegisterUserActor.props, "registerUserActor")
-  val busDataActor: ActorRef = system.actorOf(Props(new BusDataActor(HttpWrapper)), "busDataActor")
+  val registerUser: ActorRef = system.actorOf(RegisterUser.props, "registerUser")
+  val busData: ActorRef = system.actorOf(Props(new BusData(HttpWrapper)), "busData")
+  val favoritesActor: ActorRef = system.actorOf(FavoritesActor.props, "favoritesActor")
 
-  lazy val routes: Route = userRoutes ~ busRoutes
+  lazy val routes: Route = userRoutes ~ busRoutes ~ busRoutesv2 ~ userRoutesv2
   val port: Int = sys.env.getOrElse("PORT", "8080").toInt
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "0.0.0.0", port)
-  override implicit lazy val timeout: Timeout = Timeout(10.seconds)
+  override implicit lazy val timeout: Timeout = Timeout(20.seconds)
 
   serverBinding.onComplete {
     case Success(bound) =>
