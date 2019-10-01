@@ -1,4 +1,4 @@
-package com.lpenzey.routes
+package com.lpenzey.routes.v1
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshalling.Marshal
@@ -6,14 +6,14 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import com.lpenzey.actors.RegisterUserActor
-import com.lpenzey.dao.{FavoritesDao, UsersDao}
+import com.lpenzey.actors.RegisterUser
+import com.lpenzey.dao.UsersDao
 import com.lpenzey.helpers.TokenService
 import com.lpenzey.models.{DatabaseSchema, User}
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{FreeSpec, Matchers}
 
 import scala.concurrent.duration._
-import org.scalatest.{FreeSpec, Matchers}
 
 class UserRoutesSpec extends FreeSpec
   with Matchers
@@ -24,13 +24,13 @@ class UserRoutesSpec extends FreeSpec
   with TokenService {
   implicit def default(implicit system: ActorSystem): RouteTestTimeout = RouteTestTimeout(5.seconds)
 
-  override val registerUserActor: ActorRef =
-  system.actorOf(RegisterUserActor.props, "userRegistry")
+  override val registerUser: ActorRef =
+  system.actorOf(RegisterUser.props, "registerUser")
 
   val routes: Route = userRoutes
 
   "UserRoutes" - {
-    "return no users when table is empty (GET /users/register)" in {
+    "return no users when table is empty (GET v1/users/register)" in {
       HttpRequest(uri = "/v1/users/register") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
 
@@ -40,7 +40,7 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "be able to add users (POST /users/register)" in {
+    "be able to add users (POST v1/users/register)" in {
       val user = User(Some(42), "Reggie", "Reggiespassword")
       val userEntity = Marshal(user).to[MessageEntity].futureValue
 
@@ -53,7 +53,7 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "return one user (GET /users/register)" in {
+    "return one user (GET v1/users/register)" in {
       HttpRequest(uri = "/v1/users/register") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
 
@@ -63,8 +63,7 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "be able to find users (GET /users/register)" in {
-
+    "be able to find users (GET v1/users/register/UserName)" in {
       HttpRequest(uri = "/v1/users/register/Reggie") ~> Route.seal(routes) ~> check {
         status should ===(StatusCodes.OK)
 
@@ -74,7 +73,7 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "let a authenticated user login (POST /users/login)" in {
+    "let a authenticated user login (POST v1/users/login)" in {
       val validCredentials = BasicHttpCredentials("Reggie", "Reggiespassword")
 
       Post(uri = "/v1/users/login") ~> addCredentials(validCredentials) ~> Route.seal(routes) ~> check {
@@ -83,7 +82,7 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "deny access for an incorrect password (POST /users/login)" in {
+    "deny access for an incorrect password (POST v1/users/login)" in {
       val invalidCredentials = BasicHttpCredentials("Reggie", "Notreggiespassword")
 
       Post(uri = "/v1/users/login") ~> addCredentials(invalidCredentials) ~> Route.seal(routes) ~> check {
@@ -91,7 +90,7 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "deny access for an non-existant user (POST /users/login)" in {
+    "deny access for an non-existant user (POST v1/users/login)" in {
       val validCredentials = BasicHttpCredentials("Joseph", "joespassword")
 
       Post(uri = "/v1/users/login") ~> addCredentials(validCredentials) ~> Route.seal(routes) ~> check {
@@ -99,13 +98,13 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "deny access to favorites if not logged in (GET /users/favorites)" in {
+    "deny access to favorites if not logged in (GET v1/users/favorites)" in {
       Get(uri = "/v1/users/favorites")  ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
 
-    "allow access to favorites if logged in (GET /users/favorites)" in {
+    "allow access to favorites if logged in (GET v1/users/favorites)" in {
       UsersDao.createUser(User(Some(89), "Reggie", "Reggiespassword")).futureValue
       val reggie: Option[User] = UsersDao.findUserByName("Reggie").futureValue
 
@@ -117,14 +116,14 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "not allow creating new favorite if no credentials (POST /users/favorites)" in {
+    "not allow creating new favorite if no credentials (POST v1/users/favorites)" in {
 
       Post(uri = "/v1/users/favorites?rt=70&stpid=2000") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
 
-    "allow creating new favorite if valid credentials (POST /users/favorites)" in {
+    "allow creating new favorite if valid credentials (POST v1/users/favorites)" in {
       val reggie: Option[User] = UsersDao.findUserByName("Reggie").futureValue
 
       val token: String = createToken(reggie.get)

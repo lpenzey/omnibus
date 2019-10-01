@@ -9,7 +9,7 @@ import com.lpenzey.helpers.{JsonSupport, TokenService}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-object RegisterUserActor {
+object RegisterUser {
   final case object GetUsers
   final case class CreateToken(user: User)
   final case class CreateUser(user: User)
@@ -18,11 +18,11 @@ object RegisterUserActor {
   final case class AddToFavorites(token: String, route: String, stopId: String)
   final case class DeleteUser(token: String)
   final case class ActionPerformed(action: String)
-  def props: Props = Props[RegisterUserActor]
+  def props: Props = Props[RegisterUser]
 }
 
-class RegisterUserActor extends JsonSupport with Actor with ActorLogging with TokenService  {
-  import RegisterUserActor._
+class RegisterUser extends JsonSupport with Actor with ActorLogging with TokenService  {
+  import RegisterUser._
   import context.dispatcher
   val key: String = System.getenv("JWT_SECRET")
 
@@ -32,19 +32,32 @@ class RegisterUserActor extends JsonSupport with Actor with ActorLogging with To
       val allUsers: Future[Seq[User]] = UsersDao.getUsers
       allUsers.onComplete {
         case Success(usr) => getUserSender ! Users(usr)
-        case Failure(failureUsr) =>  println(failureUsr.toString)
+        case Failure(failureUsr) =>  getUserSender ! failureUsr
       }
 
     case CreateUser(user) =>
-      UsersDao.createUser(user)
-      sender() ! ActionPerformed(s"User ${user.name} created.")
+      val createSender = sender
+
+      val exists: Future[Option[User]] = UsersDao.findUserByName(user.name)
+      exists.onComplete {
+        case Success(usr) =>
+          if (usr.isEmpty) {
+            UsersDao.createUser(user)
+            createSender ! ActionPerformed(s"User ${user.name} created.")
+        } else {
+            createSender ! ActionPerformed("There was an issue creating this user, try something else.")
+          }
+        case Failure(failureUsr) => createSender ! failureUsr
+      }
 
     case GetUser(name) =>
       val userSender = sender
       val user: Future[Option[User]] = UsersDao.findUserByName(name)
       user.onComplete {
-        case Success(usr) => userSender ! usr.get.copy()
-        case Failure(failureUsr) => userSender ! failureUsr
+        case Success(usr) =>
+          userSender ! usr.getOrElse("No user found")
+        case Failure(failureUsr) =>
+          userSender ! failureUsr
       }
 
     case DeleteUser(token) =>
