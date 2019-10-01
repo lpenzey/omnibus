@@ -9,10 +9,10 @@ trait ExceptionHelper {
 
   implicit def myExceptionHandler: ExceptionHandler =
     ExceptionHandler {
-      case _: ClassCastException =>
+      case _: Exception =>
         extractUri { uri =>
           println(s"Request to $uri could not be handled normally")
-          complete(HttpResponse(InternalServerError, entity = "Bad numbers, bad result!!!"))
+          complete(HttpResponse(InternalServerError, entity = "Whoops! An error occurred."))
         }
 
     }
