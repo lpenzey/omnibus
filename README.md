@@ -11,14 +11,81 @@ Written in [Scala](https://scala-lang.org)
 
 This repository uses [SBT](http://www.scala-sbt.org/) as the build tool. 
 
+Before running locally, do the following:
+1. Modify the `Access-Control-Allow-Origin` field in `/lpenzey/helpers/CORShandler` with your client connection (e.g. `http://localhost:3000`))
 To run the project clone this repository and import it into your IDE or run the following command:
+2. Add the necessary variables to the `.env` file. You can obtain a CTA bus tracker api key [here](https://www.transitchicago.com/developers/bustracker/)
+3. To setup the local mysql database, go to `src/main/resources/application.conf`. In that file there are two database objects. Whichever object is named `database` 
+is the one that will be used when the project runs, and it's currently setup for production. To run a local mysql database, rename `database` to 
+anything else (`proddatabase` for example) and in first object, rename all four instances of `devdatabase` to just `database`. Then you'll need to be running mysql locally 
+(installation details can be found [here](https://dev.mysql.com/doc/mysql-getting-started/en/#mysql-getting-started-connecting)) and connect to it using the password 
+you created during installation (setup varies depending on what platform you're running - the following commands are mac specific, but all varieties can be found at the installation link above).
+4. Once installed login to `mysql` which can be done with the `mysql` cli with the following commands:
+```
+mysql -u root -p
+```
+you'll then be prompted to enter the password that you created for the superuser `root`. When logged in, create the database:
+```
+CREATE DATABASE omnibus;
+```
+then:
+```
+USE omnibus;
+```
+Then create the `users` and `favorites` table with the following:
+```
+CREATE TABLE IF NOT EXISTS users(
+  id         BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+  name       VARCHAR(200)   NOT NULL,
+  password   VARCHAR(200)   NOT NULL,
+);
+CREATE TABLE IF NOT EXISTS favorites(
+  id         BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+  userId     BIGINT(20)   NOT NULL,
+  route      VARCHAR(200)   NOT NULL,
+  stopId     VARCHAR(200)  NOT NULL,
+  FOREIGN KEY (userId)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+```
+Almost there! With the database and tables created, go back to `src/main/resources/application.conf` and modify the `user` to be `root` 
+and the `password` to be whatever password you chose when installing `mysql`. The final `application.conf` file should appear as follows, 
+except of course with the password you created:
+```
+database {
+  profile = "slick.jdbc.MySQLProfile$"
+  host = localhost
+  port = 3306
+  dbName = omnibus
+  url = "jdbc:mysql://"${database.host}":"${database.port}"/"${database.dbName}"?serverTimezone=UTC"
+  driver = "com.mysql.cj.jdbc.Driver"
+  user = "root"
+  password = "your password"
+  numThreads = 10
+}
 
-(Note: before running locally, modify the `Access-Control-Allow-Origin` field in `/lpenzey/helpers/CORShandler` with your client connection (e.g. `http://localhost:3000`))
+proddatabase{
+  profile = "slick.jdbc.MySQLProfile$"
+  url= ${?CLEARDB_DATABASE_URL}
+  driver = "com.mysql.cj.jdbc.Driver"
+  numThreads = 10
+  maxConnections = 10
+  queueSize=1000
+  keepAliveConnection = true
+  connectionPool = disabled
+}
+```
+
+With that done, you can now run the project! Run the following command to start the server:
 ```
 sbt run
 ```
 
 This will download necessary dependencies and run the project and will start listening for HTTP requests on ``localhost:8080``.
+
+Note: if you're running the [front end](https://github.com/lpenzey/which_bus) as well, you need to change all instances of 
+`DeployedV1OmnibusUri` in `src/Services/busTrackerAPI` to `LocalOmnibusUri` 
 
 ## Run the tests
 To build and test this project, run ``sbt test``. 
