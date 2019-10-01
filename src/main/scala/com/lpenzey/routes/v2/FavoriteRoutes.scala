@@ -32,39 +32,41 @@ trait FavoriteRoutes
   private val cors = new CORSHandler {}
 
   def favoriteRoutes: Route = pathPrefix("v2") {
-    pathPrefix("favorites") {
-      pathEnd {
-        concat(
-          options {
-            cors.corsHandler(complete(StatusCodes.OK))
-          },
-          get {
-            optionalHeaderValue(extractAuthHeader) { token =>
-              val myToken = token.getOrElse("Not found").toString
-              if (myToken == "Not found") {
-                cors.corsHandler(complete(StatusCodes.Unauthorized))
-              } else {
-                val favorites: Future[Favorites] = (favoritesActor ? GetFavorites(myToken)).mapTo[Favorites]
-                cors.corsHandler(complete(favorites))
-              }
-            }
-          },
-          post {
-            parameters('rt.as[String], 'stpid.as[String]) { (route, stopId) =>
+    pathPrefix("users") {
+      pathPrefix("favorites") {
+        pathEnd {
+          concat(
+            options {
+              cors.corsHandler(complete(StatusCodes.OK))
+            },
+            get {
               optionalHeaderValue(extractAuthHeader) { token =>
-                val myToken = token.getOrElse("Notfound").toString
-                if (myToken == "Notfound") {
+                val myToken = token.getOrElse("Not found").toString
+                if (myToken == "Not found") {
                   cors.corsHandler(complete(StatusCodes.Unauthorized))
                 } else {
-                  val favorites: Future[Any] = favoritesActor ? AddToFavorites(myToken, route, stopId)
-                  onSuccess(favorites) { favorites =>
-                    cors.corsHandler(complete(favorites.toString))
+                  val favorites: Future[Favorites] = (favoritesActor ? GetFavorites(myToken)).mapTo[Favorites]
+                  cors.corsHandler(complete(favorites))
+                }
+              }
+            },
+            post {
+              parameters('rt.as[String], 'stpid.as[String]) { (route, stopId) =>
+                optionalHeaderValue(extractAuthHeader) { token =>
+                  val myToken = token.getOrElse("Notfound").toString
+                  if (myToken == "Notfound") {
+                    cors.corsHandler(complete(StatusCodes.Unauthorized))
+                  } else {
+                    val favorites: Future[Any] = favoritesActor ? AddToFavorites(myToken, route, stopId)
+                    onSuccess(favorites) { favorites =>
+                      cors.corsHandler(complete(favorites.toString))
+                    }
                   }
                 }
               }
             }
-          }
-        )
+          )
+        }
       }
     }
   }

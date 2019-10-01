@@ -30,38 +30,38 @@ class FavoriteRoutesSpec extends FreeSpec
 
   "FavoriteRoutes" - {
 
-    "deny access to favorites if not logged in (GET v2/favorites)" in {
-      Get(uri = "/v2/favorites")  ~> Route.seal(routes) ~> check {
+    "deny access to favorites if not logged in (GET v2/users/avorites)" in {
+      Get(uri = "/v2/users/favorites")  ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
 
-    "allow access to favorites if logged in (GET v2/favorites)" in {
+    "allow access to favorites if logged in (GET v2/users/favorites)" in {
       UsersDao.createUser(User(Some(89), "Reggie", "Reggiespassword")).futureValue
       val reggie: Option[User] = UsersDao.findUserByName("Reggie").futureValue
 
       val token: String = createToken(reggie.get)
 
       val reggiesToken = OAuth2BearerToken(token)
-      Get(uri = "/v2/favorites") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
+      Get(uri = "/v2/users/favorites") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
       }
     }
 
-    "not allow creating new favorite if no credentials (POST v2/favorites)" in {
+    "not allow creating new favorite if no credentials (POST v2/users/favorites)" in {
 
-      Post(uri = "/v2/favorites?rt=70&stpid=2000") ~> Route.seal(routes) ~> check {
+      Post(uri = "/v2/users/favorites?rt=70&stpid=2000") ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.Unauthorized)
       }
     }
 
-    "allow creating new favorite if valid credentials (POST v2/favorites)" in {
+    "allow creating new favorite if valid credentials (POST v2/users/favorites)" in {
       val reggie: Option[User] = UsersDao.findUserByName("Reggie").futureValue
 
       val token: String = createToken(reggie.get)
 
       val reggiesToken = OAuth2BearerToken(token)
-      Post(uri = "/v2/favorites?rt=70&stpid=2000") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
+      Post(uri = "/v2/users/favorites?rt=70&stpid=2000") ~> addCredentials(reggiesToken) ~> Route.seal(routes) ~> check {
         status should === (StatusCodes.OK)
       }
     }
