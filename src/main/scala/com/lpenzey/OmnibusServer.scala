@@ -13,9 +13,9 @@ import akka.util.Timeout
 import com.lpenzey.actors.BusData.HttpWrapper
 import com.lpenzey.actors.{BusData, FavoritesActor, RegisterUser}
 import com.lpenzey.routes.v1.{BusRoutes, UserRoutes}
-import com.lpenzey.routes.v2.{BusRoutesv2, UserRoutesv2}
+import com.lpenzey.routes.v2.{BusRoutesv2, FavoriteRoutes, UserRoutesv2}
 
-object OmnibusServer extends App with UserRoutes with BusRoutes with BusRoutesv2 with UserRoutesv2 {
+object OmnibusServer extends App with UserRoutes with BusRoutes with BusRoutesv2 with UserRoutesv2 with FavoriteRoutes{
 
   implicit val system: ActorSystem = ActorSystem("omnibusServer")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
