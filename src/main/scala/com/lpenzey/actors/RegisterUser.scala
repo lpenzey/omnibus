@@ -45,7 +45,7 @@ class RegisterUser extends JsonSupport with Actor with ActorLogging with TokenSe
             UsersDao.createUser(user)
             createSender ! ActionPerformed(s"User ${user.name} created.")
         } else {
-            createSender ! ActionPerformed(s"There was an issue creating this user, try something else.")
+            createSender ! ActionPerformed("There was an issue creating this user, try something else.")
           }
         case Failure(failureUsr) => createSender ! failureUsr
       }

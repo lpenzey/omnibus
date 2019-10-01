@@ -52,7 +52,7 @@ trait UserRoutesv2
               entity(as[User]) { user =>
                 val userCreated: Future[ActionPerformed] = (registerUser ? CreateUser(user)).mapTo[ActionPerformed]
                 onSuccess(userCreated) { performed =>
-                  usersV2Log.info(s"Created User [${user.name}]: ${performed.action}")
+                  usersV2Log.info(s"${performed.action}")
                   cors.corsHandler(complete(StatusCodes.Created, performed))
                 }
               }
