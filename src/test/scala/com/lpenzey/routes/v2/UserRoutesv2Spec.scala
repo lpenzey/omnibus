@@ -56,23 +56,9 @@ class UserRoutesv2Spec extends FreeSpec
       }
     }
 
-    "return one user (GET v2/users/register)" in {
+    "Not be able to find users (GET v2/users/register)" in {
       HttpRequest(uri = "/v2/users/register") ~> Route.seal(routes) ~> check {
-        status should === (StatusCodes.OK)
-
-        contentType should === (ContentTypes.`application/json`)
-
-        entityAs[String].contains("Reggie") should === (true)
-      }
-    }
-
-    "be able to find users (GET v2/users/register)" in {
-      HttpRequest(uri = "/v2/users/register/Yessica") ~> Route.seal(routes) ~> check {
-        status should ===(StatusCodes.OK)
-
-        contentType should ===(ContentTypes.`application/json`)
-
-        entityAs[User].name should ===("Yessica")
+        status should ===(StatusCodes.MethodNotAllowed)
       }
     }
 

@@ -30,15 +30,6 @@ class UserRoutesSpec extends FreeSpec
   val routes: Route = userRoutes
 
   "UserRoutes" - {
-    "return no users when table is empty (GET v1/users/register)" in {
-      HttpRequest(uri = "/v1/users/register") ~> Route.seal(routes) ~> check {
-        status should === (StatusCodes.OK)
-
-        contentType should === (ContentTypes.`application/json`)
-
-        entityAs[String] should === ("""{"users":[]}""")
-      }
-    }
 
     "be able to add users (POST v1/users/register)" in {
       val user = User(Some(42), "Reggie", "Reggiespassword")
@@ -53,23 +44,9 @@ class UserRoutesSpec extends FreeSpec
       }
     }
 
-    "return one user (GET v1/users/register)" in {
-      HttpRequest(uri = "/v1/users/register") ~> Route.seal(routes) ~> check {
-        status should === (StatusCodes.OK)
-
-        contentType should === (ContentTypes.`application/json`)
-
-        entityAs[String].contains("Reggie") should === (true)
-      }
-    }
-
-    "be able to find users (GET v1/users/register/UserName)" in {
+    "Not be able to find users (GET v1/users/register/UserName)" in {
       HttpRequest(uri = "/v1/users/register/Reggie") ~> Route.seal(routes) ~> check {
-        status should ===(StatusCodes.OK)
-
-        contentType should ===(ContentTypes.`application/json`)
-
-        entityAs[User].name should ===("Reggie")
+        status should ===(StatusCodes.MethodNotAllowed)
       }
     }
 

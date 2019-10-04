@@ -40,11 +40,6 @@ trait UserRoutesv2
       pathPrefix("register") {
         pathEnd {
           concat(
-            get {
-              val users: Future[Users] =
-                (registerUser ? GetUsers).mapTo[Users]
-              cors.corsHandler(complete(users))
-            },
             options {
               cors.corsHandler(complete(StatusCodes.OK))
             },
@@ -56,18 +51,8 @@ trait UserRoutesv2
                   cors.corsHandler(complete(StatusCodes.Created, performed))
                 }
               }
-            })
-        } ~
-          path(Segment) { name =>
-            get {
-              val maybeUser: Future[User] = (registerUser ? GetUser(name)).mapTo[User]
-              rejectEmptyResponse {
-                {
-                  cors.corsHandler(complete(maybeUser))
-                }
-              }
             }
-          }
+          )}
       } ~
         delete {
           optionalHeaderValue(extractAuthHeader) { token =>
